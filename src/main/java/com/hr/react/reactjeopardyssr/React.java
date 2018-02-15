@@ -4,6 +4,9 @@ import jdk.nashorn.api.scripting.NashornScriptEngine;
 
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
+
+import com.hr.react.reactjeopardyssr.models.Comment;
+
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
@@ -18,6 +21,7 @@ public class React {
             try {
                 nashornScriptEngine.eval(read("static/nashorn-polyfill.js"));
                 nashornScriptEngine.eval(read("static/vendor/react.js"));
+                nashornScriptEngine.eval(read("static/vendor/showdown.min.js"));
                 nashornScriptEngine.eval(read("static/react_components/app.js"));
             } catch (ScriptException e) {
                 throw new RuntimeException(e);
@@ -26,9 +30,9 @@ public class React {
         }
     };
 
-    public  String renderApp() {
+    public  String renderApp(List<Comment> comments) {
         try {
-            Object html = engineHolder.get().invokeFunction("renderServer");
+            Object html = engineHolder.get().invokeFunction("renderServer", comments);
             return String.valueOf(html);
         }
         catch (Exception e) {

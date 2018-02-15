@@ -1,74 +1,109 @@
-var App = React.createClass({
-	displayName: "App",
-	componentDidMount: function () {
-        this.getNewQuestion();
-    },
-    getNewQuestion: function () {
-	    	axios.get("http://jservice.io/api/random").then(
-        		function(result){
-        			this.setState({data: result.data[0]})
-        		}.bind(this)
-        )
-    },
-    score: function(event){
-    		event.preventDefault();
-    		if(this.state.data.answer === event.target.userAnswer.value){
-    			this.setState({score: this.state.score + this.state.data.value})
-    		}else{
-    			this.setState({score: this.state.score - this.state.data.value})
-    		}
-    		event.target.reset();
-    		this.getNewQuestion();
-    },
-    getInitialState: function () {
-        return {
-        		data: { 
-        			category: {},
-    			},
-    			score: 0
+var converter = new Showdown.converter();
+
+var CommentForm = React.createClass({displayName: "CommentForm",
+    handleSubmit: function (e) {
+        e.preventDefault();
+        var author = e.target.author.value.trim();
+        var text = e.target.text.value.trim();
+        if (!author || !text) {
+            return;
         }
+        this.props.onCommentSubmit({author: author, text: text});
+        e.target.reset();
     },
     render: function () {
-	    	if(this.state.data.question){
-	        return (
-	            React.createElement("div", {}, 
-	                "Category: " + this.state.data.category.title,
-	                React.createElement("br"),
-	                "Question: " + this.state.data.question,
-	                React.createElement("br"),
-	                "value: " + this.state.data.value,
-	                React.createElement("br"),
-	                React.createElement("br"),
-	                "Current Score: " + this.state.score,
-	                React.createElement("br"),
-	                React.createElement("br"),
-	                React.createElement("form", {onSubmit: this.score}, 
-                        React.createElement("input", {type: "text", name:"userAnswer", placeholder: "What is?"}), 
-                        React.createElement("button", {type: "submit"}, "Submit")
-                    ),
-                    React.createElement("br"),
-                    "Shhhhhh: " + this.state.data.answer
-	            )
-	        );
-	    	}
-	        
-	    return (
-	        React.createElement("div", {}, 
-	            "Loading..."
-	        )
-	    );
+        return (
+            React.createElement("form", {className: "commentForm", onSubmit: this.handleSubmit}, 
+                React.createElement("input", {type: "text", name: "author", placeholder: "Your name"}), 
+                React.createElement("input", {type: "text", name: "text", placeholder: "Say something..."}), 
+                React.createElement("input", {type: "submit", value: "Post"})
+            )
+        );
     }
 });
 
-var renderClient = function () {
+var Comment = React.createClass({displayName: "Comment",
+    render: function () {
+        var rawMarkup = converter.makeHtml(this.props.children.toString());
+        return (
+            React.createElement("div", {className: "comment"}, 
+                React.createElement("h2", null, this.props.author), 
+                React.createElement("span", {dangerouslySetInnerHTML: {__html: rawMarkup}})
+            )
+        );
+    }
+});
+
+var CommentList = React.createClass({displayName: "CommentList",
+    render: function () {
+        var commentNodes = this.props.data.map(function (comment, index) {
+            return (
+                React.createElement(Comment, {author: comment.author, key: index}, 
+                    comment.text
+                )
+            );
+        });
+        return (
+            React.createElement("div", {className: "commentList"}, 
+                commentNodes
+            )
+        );
+    }
+});
+
+var CommentBox = React.createClass({displayName: "CommentBox",
+    handleCommentSubmit: function (comment) {
+        var comments = this.state.data;
+        comments.push(comment);
+        
+        this.setState({data: comments}, function () {
+        	
+        		axios.post(this.props.url, comment).then(
+            		function(results){)
+            			this.setState({data: results.data})
+            		}.bind(this)
+            )
+        		
+        });
+    },
+    loadCommentsFromServer: function () {
+    	
+    		axios.get(this.props.url).then(
+        		function(results){
+        			this.setState({data: results.data})
+        		}.bind(this)
+        )
+        
+    },
+    getInitialState: function () {
+        return {data: this.props.data};
+    },
+    componentDidMount: function () {
+        this.loadCommentsFromServer();
+        setInterval(this.loadCommentsFromServer, this.props.pollInterval);
+    },
+    render: function () {
+        return (
+            React.createElement("div", {className: "commentBox"}, 
+                React.createElement("h1", null, "Comments"), 
+                React.createElement(CommentList, {data: this.state.data}), 
+                React.createElement(CommentForm, {onCommentSubmit: this.handleCommentSubmit})
+            )
+        );
+    }
+});
+
+var renderClient = function (comments) {
+    var data = comments || [];
     React.render(
-        React.createElement(App),
+        React.createElement(CommentBox, {data: data, url: "/comments", pollInterval: 5000}),
         document.getElementById("content")
     );
 };
 
-var renderServer = function () {
+var renderServer = function (comments) {
+    var data = Java.from(comments);
     return React.renderToString(
-        React.createElement(App)
+        React.createElement(CommentBox, {data: data, url: "/comments", pollInterval: 5000})
     );
 };
