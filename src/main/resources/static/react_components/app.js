@@ -1,22 +1,62 @@
 var App = React.createClass({
 	displayName: "App",
 	componentDidMount: function () {
-        axios.get("http://jservice.io/api/random").then(
+        this.getNewQuestion();
+    },
+    getNewQuestion: function () {
+	    	axios.get("http://jservice.io/api/random").then(
         		function(result){
-        			this.setState({question: result.data[0]})
+        			this.setState({data: result.data[0]})
         		}.bind(this)
         )
     },
+    score: function(event){
+    		event.preventDefault();
+    		if(this.state.data.answer === event.target.userAnswer.value){
+    			this.setState({score: this.state.score + this.state.data.value})
+    		}else{
+    			this.setState({score: this.state.score - this.state.data.value})
+    		}
+    		event.target.reset();
+    		this.getNewQuestion();
+    },
     getInitialState: function () {
-        return {question: {}};
+        return {
+        		data: { 
+        			category: {},
+    			},
+    			score: 0
+        }
     },
     render: function () {
-        return (
-            React.createElement("div", {}, 
-                "Hello World",
-                JSON.stringify(this.state.question)
-            )
-        );
+	    	if(this.state.data.question){
+	        return (
+	            React.createElement("div", {}, 
+	                "Category: " + this.state.data.category.title,
+	                React.createElement("br"),
+	                "Question: " + this.state.data.question,
+	                React.createElement("br"),
+	                "value: " + this.state.data.value,
+	                React.createElement("br"),
+	                React.createElement("br"),
+	                "Current Score: " + this.state.score,
+	                React.createElement("br"),
+	                React.createElement("br"),
+	                React.createElement("form", {onSubmit: this.score}, 
+                        React.createElement("input", {type: "text", name:"userAnswer", placeholder: "What is?"}), 
+                        React.createElement("button", {type: "submit"}, "Submit")
+                    ),
+                    React.createElement("br"),
+                    "Shhhhhh: " + this.state.data.answer
+	            )
+	        );
+	    	}
+	        
+	    return (
+	        React.createElement("div", {}, 
+	            "Loading..."
+	        )
+	    );
     }
 });
 
