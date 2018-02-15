@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>SSR React Jeopardy</title>
+</head>
+<body>
+
+<div id="content">{{{content}}}</div>
+
+<script type="text/javascript" src="vendor/react.js"></script>
+<script type="text/javascript" src="react_components/app.js"></script>
+<script type="text/javascript">
+    (function () {
+    		window.onload = function() {
+    			renderClient();
+    		};
+    })();
+</script>
+</body>
+</html>
