@@ -59,7 +59,7 @@ var CommentBox = React.createClass({displayName: "CommentBox",
         this.setState({data: comments}, function () {
         	
         		axios.post(this.props.url, comment).then(
-            		function(results){)
+            		function(results){
             			this.setState({data: results.data})
             		}.bind(this)
             )
